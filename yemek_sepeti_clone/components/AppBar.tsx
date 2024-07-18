@@ -1,14 +1,14 @@
-import React, { useEffect, useState } from "react";
+import React, {useEffect, useState} from 'react';
 import {
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
   TextInput,
   Animated,
 } from 'react-native';
 import AppBarIconComponent from './IconComponent/AppBarIconComponent';
 
+// @ts-ignore
 function AppBar({scrollY}) {
   const inputOpacity = scrollY.interpolate({
     inputRange: [0, 30],
@@ -27,7 +27,7 @@ function AppBar({scrollY}) {
     outputRange: [100, 70],
     extrapolate: 'clamp',
   });
-  const [isReadOnly, setIsReadOnly] = useState(true);
+  const [isReadOnly, setIsReadOnly] = useState(false);
 
   useEffect(() => {
     if (scrollY._value < 20) {
@@ -35,7 +35,7 @@ function AppBar({scrollY}) {
     } else {
       setIsReadOnly(true);
     }
-  }, [scrollY]);
+  }, [scrollY._value]);
 
   return (
     <View>
