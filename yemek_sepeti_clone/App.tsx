@@ -249,7 +249,7 @@ const styles = StyleSheet.create({
   },
   bannerImage: {
     width: 150,
-    height: 120,
+    height: 130,
     borderRadius: 10,
     justifyContent: 'center',
   },

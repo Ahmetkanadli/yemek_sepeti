@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from "react";
 import {
   StyleSheet,
   Text,
@@ -27,6 +27,15 @@ function AppBar({scrollY}) {
     outputRange: [100, 70],
     extrapolate: 'clamp',
   });
+  const [isReadOnly, setIsReadOnly] = useState(true);
+
+  useEffect(() => {
+    if (scrollY._value < 20) {
+      setIsReadOnly(false);
+    } else {
+      setIsReadOnly(true);
+    }
+  }, [scrollY]);
 
   return (
     <View>
@@ -55,6 +64,7 @@ function AppBar({scrollY}) {
             <TextInput
               style={styles.searchInput}
               placeholder="Restoran veya mağaza arayın"
+              readOnly={isReadOnly}
             />
           </View>
         </Animated.View>
@@ -93,17 +103,16 @@ const styles = StyleSheet.create({
   searchContainer: {
     backgroundColor: '#eb004b',
     borderRadius: 10,
-    marginBottom: 16,
+    marginBottom: 30,
     flex: 1,
     color: '#eb004b',
-    marginHorizontal: 20,
-    marginVertical: 10,
   },
   searchInput: {
     backgroundColor: '#f1f1f1',
     padding: 8,
     borderRadius: 30,
     height: 50,
+    marginHorizontal: 20,
   },
 });
 
