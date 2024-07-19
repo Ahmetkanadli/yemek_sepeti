@@ -8,7 +8,9 @@ export interface Restaurant {
   name: string;
   location: string;
   image: string;
-  // Diğer restoran özelliklerini buraya ekleyin
+  degerlendirme: number;
+  minimum_sepet_tutari: number;
+  categories: { name: string; dishes: { name: string; price: number }[] }[];
 }
 
 export const getRestaurants = async (): Promise<Restaurant[]> => {
@@ -16,12 +18,14 @@ export const getRestaurants = async (): Promise<Restaurant[]> => {
     const response = await axios.get(`${BASE_URL}/restourantlar.json`);
     const data = response.data;
 
-    // Firebase'den gelen veriyi Restaurant tipine dönüştürme
     const restaurants: Restaurant[] = Object.keys(data).map(key => ({
       id: key,
       name: data[key].name,
       location: data[key].location,
       image: data[key].image,
+      degerlendirme: data[key].degerlendirme,
+      minimum_sepet_tutari: data[key].minimum_sepet_tutari,
+      categories: data[key].categories || [],
     }));
 
     return restaurants;

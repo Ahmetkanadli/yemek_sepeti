@@ -6,6 +6,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   Alert,
+  FlatList,
 } from 'react-native';
 import {addRestaurant, Restaurant} from '../../core/api';
 import {StackNavigationProp} from '@react-navigation/stack';
@@ -36,14 +37,47 @@ const AddRestaurantScreen: React.FC<Props> = ({navigation}) => {
   const [name, setName] = useState('');
   const [location, setLocation] = useState('');
   const [image, setImage] = useState('');
+  const [categories, setCategories] = useState<
+    {name: string; dishes: {name: string; price: number}[]}[]
+  >([]);
+  const [categoryName, setCategoryName] = useState('');
+  const [dishName, setDishName] = useState('');
+  const [dishPrice, setDishPrice] = useState('');
+
+  const handleAddCategory = () => {
+    if (categoryName) {
+      setCategories([...categories, {name: categoryName, dishes: []}]);
+      setCategoryName('');
+    } else {
+      Alert.alert('Validation', 'Please enter a category name');
+    }
+  };
+
+  const handleAddDish = (categoryIndex: number) => {
+    if (dishName && dishPrice) {
+      const newCategories = [...categories];
+      newCategories[categoryIndex].dishes.push({
+        name: dishName,
+        price: parseFloat(dishPrice),
+      });
+      setCategories(newCategories);
+      setDishName('');
+      setDishPrice('');
+    } else {
+      Alert.alert('Validation', 'Please enter both dish name and price');
+    }
+  };
 
   const handleAddRestaurant = async () => {
-    if (name && location && image) {
+    if (name && location && image && categories.length > 0) {
       const newRestaurant: Restaurant = {
-        id: '', // Firebase tarafından otomatik olarak oluşturulacak
+        id: '',
         name,
         location,
         image,
+        degerlendirme: 0,
+        minimum_sepet_tutari: 0,
+        categories,
       };
 
       try {
@@ -55,43 +89,99 @@ const AddRestaurantScreen: React.FC<Props> = ({navigation}) => {
         Alert.alert('Error', 'Failed to add restaurant');
       }
     } else {
-      Alert.alert('Validation', 'Please fill in all fields');
+      Alert.alert(
+        'Validation',
+        'Please fill in all fields and add at least one category',
+      );
     }
   };
 
-  return (
-    <View style={styles.container}>
-      <Text style={styles.label}>Name</Text>
+  const renderCategory = ({item, index}: {item: any; index: number}) => (
+    <View style={styles.categoryContainer}>
+      <Text style={styles.categoryName}>{item.name}</Text>
       <TextInput
         style={styles.input}
-        value={name}
-        onChangeText={setName}
-        placeholder="Restaurant Name"
+        value={dishName}
+        onChangeText={setDishName}
+        placeholder="Dish Name"
       />
-      <Text style={styles.label}>Location</Text>
       <TextInput
         style={styles.input}
-        value={location}
-        onChangeText={setLocation}
-        placeholder="Restaurant Location"
+        value={dishPrice}
+        onChangeText={setDishPrice}
+        placeholder="Dish Price"
+        keyboardType="numeric"
       />
-      <Text style={styles.label}>Image URL</Text>
-      <TextInput
-        style={styles.input}
-        value={image}
-        onChangeText={setImage}
-        placeholder="Restaurant Image URL"
-      />
-      <TouchableOpacity style={styles.button} onPress={handleAddRestaurant}>
-        <Text style={styles.buttonText}>Add Restaurant</Text>
+      <TouchableOpacity
+        style={styles.addButton}
+        onPress={() => handleAddDish(index)}>
+        <Text style={styles.buttonText}>Add Dish</Text>
       </TouchableOpacity>
+      <FlatList
+        data={item.dishes}
+        keyExtractor={(item, idx) => `${item.name}-${idx}`}
+        renderItem={({item}) => (
+          <Text style={styles.dishText}>{`${item.name} - $${item.price}`}</Text>
+        )}
+      />
     </View>
+  );
+
+  return (
+    <FlatList
+      ListHeaderComponent={
+        <View style={styles.container}>
+          <Text style={styles.label}>Name</Text>
+          <TextInput
+            style={styles.input}
+            value={name}
+            onChangeText={setName}
+            placeholder="Restaurant Name"
+          />
+          <Text style={styles.label}>Location</Text>
+          <TextInput
+            style={styles.input}
+            value={location}
+            onChangeText={setLocation}
+            placeholder="Restaurant Location"
+          />
+          <Text style={styles.label}>Image URL</Text>
+          <TextInput
+            style={styles.input}
+            value={image}
+            onChangeText={setImage}
+            placeholder="Restaurant Image URL"
+          />
+          <Text style={styles.label}>Categories</Text>
+          <TextInput
+            style={styles.input}
+            value={categoryName}
+            onChangeText={setCategoryName}
+            placeholder="Category Name"
+          />
+          <TouchableOpacity
+            style={styles.addButton}
+            onPress={handleAddCategory}>
+            <Text style={styles.buttonText}>Add Category</Text>
+          </TouchableOpacity>
+        </View>
+      }
+      data={categories}
+      renderItem={renderCategory}
+      keyExtractor={(item, index) => index.toString()}
+      contentContainerStyle={styles.container}
+      ListFooterComponent={
+        <TouchableOpacity style={styles.button} onPress={handleAddRestaurant}>
+          <Text style={styles.buttonText}>Add Restaurant</Text>
+        </TouchableOpacity>
+      }
+    />
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flexGrow: 1,
     padding: 16,
   },
   label: {
@@ -107,6 +197,13 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     paddingHorizontal: 10,
   },
+  addButton: {
+    backgroundColor: '#eb004b',
+    padding: 8,
+    borderRadius: 5,
+    alignItems: 'center',
+    marginBottom: 16,
+  },
   button: {
     backgroundColor: '#eb004b',
     padding: 16,
@@ -117,6 +214,18 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  categoryContainer: {
+    marginBottom: 16,
+  },
+  categoryName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  dishText: {
+    fontSize: 14,
+    color: '#666',
   },
 });
 

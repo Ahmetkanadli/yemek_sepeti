@@ -10,11 +10,13 @@ import {
 } from 'react-native';
 import {getRestaurants} from '../core/api';
 import {StackNavigationProp} from '@react-navigation/stack';
+import Icon from 'react-native-vector-icons/Ionicons';
 
 type RootStackParamList = {
   Home: undefined;
   RestaurantList: undefined;
   AddRestaurant: undefined;
+  RestaurantDetail: {restaurant: Restaurant};
 };
 
 type RestaurantListScreenNavigationProp = StackNavigationProp<
@@ -31,9 +33,11 @@ type Restaurant = {
   image: string;
   name: string;
   location: string;
+  degerlendirme: number,
+  minimum_sepet_tutari: number,
 };
 
-const defaultImage = 'https://via.placeholder.com/150'; // Varsayılan resim URL'si
+const defaultImage = 'https://via.placeholder.com/150';
 
 const RestaurantListScreen: React.FC<RestaurantListScreenProps> = ({
   navigation,
@@ -66,20 +70,31 @@ const RestaurantListScreen: React.FC<RestaurantListScreenProps> = ({
         data={restaurants}
         keyExtractor={item => item.id}
         renderItem={({item}) => (
-          <View style={styles.card}>
+          <TouchableOpacity
+            onPress={() =>
+              navigation.navigate('RestaurantDetail', {restaurant: item})
+            }
+            style={styles.card}>
             <Image
               source={{uri: item.image}}
               style={styles.cardImage}
               onError={() => {
                 console.error('Image failed to load, using default image');
-                item.image = defaultImage; // Hata durumunda varsayılan resme geç
+                item.image = defaultImage;
               }}
             />
             <View style={styles.cardContent}>
-              <Text style={styles.cardTitle}>{item.name}</Text>
+              <View style={styles.caedTitleContent}>
+                <Text style={styles.cardTitle}>{item.name}</Text>
+                <View style={{flexDirection: 'row', alignItems: 'center'}}>
+                  <Icon name="star" size={15} color={'#eb004b'} style={styles.rating}  ></Icon>
+                  <Text style={styles.cardTitle}>{item.degerlendirme}</Text>
+                </View>
+              </View>
+              <Text style={styles.cardSubtitle}>{`min. sepet tutarı ${item.minimum_sepet_tutari}TL`}</Text>
               <Text style={styles.cardSubtitle}>{item.location}</Text>
             </View>
-          </View>
+          </TouchableOpacity>
         )}
       />
       <TouchableOpacity
@@ -97,32 +112,40 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   card: {
-    flexDirection: 'row',
+    flexDirection: 'column',
     marginBottom: 16,
     backgroundColor: '#FFF',
     borderRadius: 10,
-    padding: 10,
     elevation: 3,
   },
   cardImage: {
-    width: 80,
-    height: 80,
+    width: 'auto',
+    height: 200,
     borderRadius: 10,
-    backgroundColor: '#ccc', // Resim yüklenemezse arka plan rengini belirtir
+    backgroundColor: '#ccc',
   },
   cardContent: {
     flex: 1,
     marginLeft: 10,
     justifyContent: 'center',
   },
+  caedTitleContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
   cardTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     color: 'black',
+    marginRight: 20,
+  },
+  rating: {
+    marginRight: 5,
   },
   cardSubtitle: {
     fontSize: 14,
     color: '#100',
+    marginBottom: 5,
   },
   addButton: {
     position: 'absolute',
