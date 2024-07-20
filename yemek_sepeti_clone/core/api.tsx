@@ -11,6 +11,8 @@ export interface Restaurant {
   degerlendirme: number;
   minimum_sepet_tutari: number;
   categories: { name: string; dishes: { name: string; price: number }[] }[];
+  alias: string;
+  servis_ucreti: number;
 }
 
 export const getRestaurants = async (): Promise<Restaurant[]> => {
@@ -26,6 +28,8 @@ export const getRestaurants = async (): Promise<Restaurant[]> => {
       degerlendirme: data[key].degerlendirme,
       minimum_sepet_tutari: data[key].minimum_sepet_tutari,
       categories: data[key].categories || [],
+      alias: data[key].alias,
+      servis_ucreti: data[key].servis_ucreti,
     }));
 
     return restaurants;
