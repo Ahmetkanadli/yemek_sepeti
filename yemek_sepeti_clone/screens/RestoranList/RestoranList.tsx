@@ -160,10 +160,7 @@ const RestaurantCard: React.FC<{
             style={
               styles.cardSubtitle
             }>{`min. sepet tutarı ${item.minimum_sepet_tutari}TL`}</Text>
-          <Text
-            style={
-              styles.cardSubtitle
-            }>{`${item.alias}`}</Text>
+          <Text style={styles.cardSubtitle}>{`${item.alias}`}</Text>
         </View>
         <Text style={styles.cardSubtitle}>{item.location}</Text>
       </View>

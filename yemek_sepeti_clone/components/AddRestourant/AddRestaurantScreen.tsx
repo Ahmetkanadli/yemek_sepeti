@@ -78,6 +78,13 @@ const AddRestaurantScreen: React.FC<Props> = ({navigation}) => {
         degerlendirme: 0,
         minimum_sepet_tutari: 0,
         categories,
+        alias: '',
+        servis_ucreti: 0,
+        teslimat: 0,
+        mevcut_teklifler: {
+          title: '',
+          subtitle: '',
+        },
       };
 
       try {

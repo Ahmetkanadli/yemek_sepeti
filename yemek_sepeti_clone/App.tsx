@@ -9,6 +9,7 @@ import RestaurantDetailScreen from './screens/RestouranDetails.tsx';
 const Stack = createStackNavigator();
 
 const App = () => {
+  // @ts-ignore
   return (
     <NavigationContainer>
       <Stack.Navigator initialRouteName="Home">
@@ -29,6 +30,7 @@ const App = () => {
         />
         <Stack.Screen
           name="RestaurantDetail"
+          // @ts-ignore
           component={RestaurantDetailScreen}
         />
       </Stack.Navigator>
