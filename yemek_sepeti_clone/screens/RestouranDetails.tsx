@@ -1,4 +1,4 @@
-import React, {useLayoutEffect, useState, useRef} from 'react';
+import React, {useEffect, useLayoutEffect, useState, useRef} from 'react';
 import {
   View,
   Text,
@@ -6,22 +6,26 @@ import {
   StyleSheet,
   FlatList,
   TouchableOpacity,
+  ActivityIndicator,
 } from 'react-native';
 import {RouteProp} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import AppBar from './RestoranList/widgets/AppBar.tsx';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Ion_Icon from 'react-native-vector-icons/Ionicons';
-import AppBarIconComponent from './RestoranList/widgets/AppBarIconComponent.tsx';
-import {Category, Restaurant} from '../core/models/types.tsx';
-import RestourantDetailHeaderComponent from '../components/restourantDetailHeaderComponent.tsx';
+import AppBarIconComponent from './RestoranList/widgets/AppBarIconComponent';
+import {Category, Restaurant} from '../core/models/types';
+import RestourantDetailHeaderComponent from '../components/restourantDetailHeaderComponent';
+import {getMenu} from '../core/api';
 
 type RootStackParamList = {
   Home: undefined;
   RestaurantList: undefined;
   AddRestaurant: undefined;
-  RestaurantDetail: {restaurant: Restaurant};
+  RestaurantDetail: {
+    restaurantId: number;
+    restaurantName: string;
+    restaurantImage: string;
+  };
 };
 
 type RestaurantDetailScreenRouteProp = RouteProp<
@@ -43,8 +47,29 @@ const RestaurantDetailScreen: React.FC<RestaurantDetailScreenProps> = ({
   route,
   navigation,
 }) => {
+  const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
+  const [menu, setMenu] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const flatListRef = useRef<FlatList>(null);
+
+  const {restaurantId, restaurantName, restaurantImage} = route.params;
+
+  useEffect(() => {
+    const fetchMenu = async () => {
+      try {
+        const menuData = await getMenu({id: restaurantId});
+        setRestaurant(menuData.restaurant);
+        setMenu(menuData.categories);
+      } catch (error) {
+        console.error('Error fetching menu:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMenu();
+  }, [restaurantId]);
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -81,22 +106,22 @@ const RestaurantDetailScreen: React.FC<RestaurantDetailScreenProps> = ({
     });
   }, [navigation]);
 
-  const {restaurant} = route.params;
-
   const renderCategory = ({item: category}: {item: Category}) => (
     <View style={styles.categoryContainer}>
       <Text style={styles.categoryName}>{category.name}</Text>
       <FlatList
         data={category.dishes}
-        keyExtractor={(item, idx) => `${item.name}-${idx}`}
+        keyExtractor={(item, idx) => `${item.id}`}
         renderItem={({item}) => (
           <View style={styles.dishContainer}>
             <View style={styles.dishColumnContainer}>
-              <Text style={styles.dishName}>{item.name}</Text>
-              <Text style={styles.dishPrice}>{item.price.toFixed(2)} TL</Text>
+              <Text style={styles.dishName}>{item.title}</Text>
+              <Text style={styles.dishPrice}>{item.price} TL</Text>
               <Text style={styles.dishPrice}>{item.description}</Text>
             </View>
-            <Image source={{uri: item.image}} style={styles.dishImage} />
+            {item.image ? (
+              <Image source={{uri: item.image}} style={styles.dishImage} />
+            ) : null}
           </View>
         )}
       />
@@ -117,6 +142,10 @@ const RestaurantDetailScreen: React.FC<RestaurantDetailScreenProps> = ({
     itemVisiblePercentThreshold: 50,
   };
 
+  if (loading) {
+    return <ActivityIndicator size="large" color="#0000ff" />;
+  }
+
   return (
     <>
       <FlatList
@@ -130,8 +159,8 @@ const RestaurantDetailScreen: React.FC<RestaurantDetailScreenProps> = ({
                 width: '100%',
                 alignItems: 'center',
               }}>
-              <Image source={{uri: restaurant.image}} style={styles.image} />
-              <Text style={styles.name}>{restaurant.name}</Text>
+              <Image source={{uri: restaurantImage}} style={styles.image} />
+              <Text style={styles.name}>{restaurantName}</Text>
             </View>
             <RestourantDetailHeaderComponent
               path={require('../assets/logo.png')}
@@ -146,23 +175,23 @@ const RestaurantDetailScreen: React.FC<RestaurantDetailScreenProps> = ({
                 justifyContent: 'flex-start',
               }}>
               <Text style={{marginBottom: 10}}>
-                Minimum sepet tutarı ${restaurant.minimum_sepet_tutari}
+                Minimum sepet tutarı {restaurant?.minimum_sepet_tutari} TL
               </Text>
             </View>
             <RestourantDetailHeaderComponent
               path={null}
               icon={'time-outline'}
-              text={`${restaurant.degerlendirme}`}
+              text={`${restaurant?.degerlendirme}`}
               textFunction={'Yorumları Gör'}
             />
             <RestourantDetailHeaderComponent
               path={null}
               icon={'star-outline'}
-              text={`Teslimat : ${restaurant.teslimat}`}
+              text={`Teslimat : ${restaurant?.teslimat}`}
               textFunction={'Değiştir'}
             />
             <View style={styles.tabBar}>
-              {restaurant.categories.map((category, index) => (
+              {menu.map((category, index) => (
                 <TouchableOpacity
                   key={index}
                   onPress={() => handleCategoryPress(index)}>
@@ -179,7 +208,7 @@ const RestaurantDetailScreen: React.FC<RestaurantDetailScreenProps> = ({
             </View>
           </View>
         }
-        data={restaurant.categories}
+        data={menu}
         renderItem={renderCategory}
         keyExtractor={(item, index) => index.toString()}
         contentContainerStyle={styles.container}
@@ -209,55 +238,49 @@ const styles = StyleSheet.create({
   },
   appBarIcons: {
     flexDirection: 'row',
-  },
-  tabBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    backgroundColor: 'white',
-    paddingVertical: 10,
-  },
-  tabBarItem: {
-    fontSize: 16,
-    color: 'black',
-  },
-  activeTabBarItem: {
-    fontWeight: 'bold',
-    color: '#eb004b',
-    backgroundColor: '#eb004b',
+    alignItems: 'center',
   },
   container: {
-    backgroundColor: 'white',
+    paddingBottom: 16,
   },
   headerContainer: {
-    alignItems: 'stretch',
-    flexDirection: 'column',
-    marginHorizontal: 16,
+    padding: 16,
+    backgroundColor: 'white',
+    alignItems: 'center',
   },
   image: {
     width: 90,
     height: 90,
-    borderRadius: 20,
-    marginBottom: 16,
-    resizeMode: 'cover',
-    elevation: 15,
-    backgroundColor: 'white',
-    // resimin burada tam olarak sığmasını istiyorum
+    borderRadius: 15,
+    marginRight: 10,
+    marginBottom: 10,
   },
   name: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 8,
+    marginLeft: 10,
     color: 'black',
-    marginLeft: 20,
   },
-  location: {
-    fontSize: 18,
-    color: '#666',
-    marginBottom: 16,
+  tabBar: {
+    flexDirection: 'row',
+    marginVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc',
+  },
+  tabBarItem: {
+    marginHorizontal: 8,
+    fontSize: 16,
+    paddingBottom: 8,
+  },
+  activeTabBarItem: {
+    color: 'red',
+    borderBottomWidth: 2,
+    borderBottomColor: 'red',
   },
   categoryContainer: {
     marginBottom: 16,
-    marginHorizontal: 16,
+    paddingHorizontal: 16,
+    backgroundColor: 'white',
   },
   categoryName: {
     fontSize: 22,
@@ -271,7 +294,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderBottomWidth: 1,
     borderBottomColor: 'grey',
-    width: '90%',
+    width: '100%',
   },
   dishColumnContainer: {
     flexDirection: 'column',

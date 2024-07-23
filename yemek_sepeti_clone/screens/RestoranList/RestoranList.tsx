@@ -10,17 +10,18 @@ import {
   StatusBar,
   useColorScheme,
 } from 'react-native';
-import {getRestaurants} from '../../core/api.tsx';
+import {getRestaurants} from '../../core/api';
 import {StackNavigationProp} from '@react-navigation/stack';
 import Icon from 'react-native-vector-icons/Ionicons';
-import AppBar from './widgets/AppBar.tsx';
+import AppBar from './widgets/AppBar';
 import {Colors} from 'react-native/Libraries/NewAppScreen';
+import {Restaurant} from '../../core/models/types';
 
 type RootStackParamList = {
   Home: undefined;
   RestaurantList: undefined;
   AddRestaurant: undefined;
-  RestaurantDetail: {restaurant: Restaurant};
+  RestaurantDetail: {restaurantId: number};
 };
 
 type RestaurantListScreenNavigationProp = StackNavigationProp<
@@ -30,17 +31,6 @@ type RestaurantListScreenNavigationProp = StackNavigationProp<
 
 type RestaurantListScreenProps = {
   navigation: RestaurantListScreenNavigationProp;
-};
-
-type Restaurant = {
-  id: string;
-  image: string;
-  name: string;
-  location: string;
-  degerlendirme: number;
-  minimum_sepet_tutari: number;
-  alias: string;
-  servis_ucreti: number;
 };
 
 const defaultImage = 'https://via.placeholder.com/150';
@@ -99,7 +89,7 @@ const RestaurantListScreen: React.FC<RestaurantListScreenProps> = ({
       />
       <Animated.FlatList
         data={restaurants}
-        keyExtractor={item => item.id}
+        keyExtractor={item => item.id.toString()}
         onScroll={Animated.event(
           [{nativeEvent: {contentOffset: {y: scrollY}}}],
           {useNativeDriver: false},
@@ -131,7 +121,11 @@ const RestaurantCard: React.FC<{
   return (
     <TouchableOpacity
       onPress={() =>
-        navigation.navigate('RestaurantDetail', {restaurant: item})
+        navigation.navigate('RestaurantDetail', {
+          restaurantId: item.id,
+          restaurantName: item.name,
+          restaurantImage: item.image,
+        })
       }
       style={styles.card}>
       <Image

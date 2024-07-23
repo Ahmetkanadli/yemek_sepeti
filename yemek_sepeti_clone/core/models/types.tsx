@@ -1,5 +1,6 @@
 export type Dish = {
-  name: string;
+  id: number,
+  title: string;
   description: string;
   image: string;
   price: number;
@@ -16,15 +17,9 @@ type mevcut_teklifler = {
 };
 
 export type Restaurant = {
-  id: string;
+  id: number;
   name: string;
   location: string;
   image: string;
   degerlendirme: number;
-  minimum_sepet_tutari: number;
-  categories: Category[];
-  alias: string;
-  servis_ucreti: number;
-  mevcut_teklifler: mevcut_teklifler;
-  teslimat: number;
 };
