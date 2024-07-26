@@ -13,9 +13,9 @@ import {StackNavigationProp} from '@react-navigation/stack';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Ion_Icon from 'react-native-vector-icons/Ionicons';
 import AppBarIconComponent from './RestoranList/widgets/AppBarIconComponent';
-import {Category, Restaurant} from '../core/models/types';
+import {Category, Offer, Restaurant} from '../core/models/types';
 import RestourantDetailHeaderComponent from '../components/restourantDetailHeaderComponent';
-import {getMenu} from '../core/api';
+import {getMenu, getOffers} from '../core/api';
 
 type RootStackParamList = {
   Home: undefined;
@@ -25,6 +25,10 @@ type RootStackParamList = {
     restaurantId: number;
     restaurantName: string;
     restaurantImage: string;
+    restaurantRating: string;
+    restaurantLocation: string;
+    restourantDelivery:string;
+    restaurantMinSepetTutari: number;
   };
 };
 
@@ -49,17 +53,25 @@ const RestaurantDetailScreen: React.FC<RestaurantDetailScreenProps> = ({
 }) => {
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
   const [menu, setMenu] = useState<Category[]>([]);
+  const [offer, setOffer] = useState<Offer[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const flatListRef = useRef<FlatList>(null);
 
-  const {restaurantId, restaurantName, restaurantImage} = route.params;
+  const {
+    restaurantId,
+    restaurantName,
+    restaurantImage,
+    restaurantRating,
+    restaurantLocation,
+    restourantDelivery,
+    restaurantMinSepetTutari,
+  } = route.params;
 
   useEffect(() => {
     const fetchMenu = async () => {
       try {
         const menuData = await getMenu({id: restaurantId});
-        setRestaurant(menuData.restaurant);
         setMenu(menuData.categories);
       } catch (error) {
         console.error('Error fetching menu:', error);
@@ -68,7 +80,20 @@ const RestaurantDetailScreen: React.FC<RestaurantDetailScreenProps> = ({
       }
     };
 
+    const fetchOffer = async () => {
+      try {
+        const offerData = await getOffers({restaurantId});
+        console.log('Fetched offers:', offerData); // Debug için ekleyin
+        setOffer(offerData);
+      } catch (error) {
+        console.error('Error fetching offers:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    console.log(`offer : ${offer}`);
     fetchMenu();
+    fetchOffer();
   }, [restaurantId]);
 
   useLayoutEffect(() => {
@@ -111,13 +136,13 @@ const RestaurantDetailScreen: React.FC<RestaurantDetailScreenProps> = ({
       <Text style={styles.categoryName}>{category.name}</Text>
       <FlatList
         data={category.dishes}
-        keyExtractor={(item, idx) => `${item.id}`}
+        keyExtractor={item => (item.id ? item.id.toString() : item.name)} // Güvenli anahtar oluşturma
         renderItem={({item}) => (
           <View style={styles.dishContainer}>
             <View style={styles.dishColumnContainer}>
               <Text style={styles.dishName}>{item.title}</Text>
               <Text style={styles.dishPrice}>{item.price} TL</Text>
-              <Text style={styles.dishPrice}>{item.description}</Text>
+              <Text style={styles.dishDescription}>{item.description}</Text>
             </View>
             {item.image ? (
               <Image source={{uri: item.image}} style={styles.dishImage} />
@@ -125,6 +150,27 @@ const RestaurantDetailScreen: React.FC<RestaurantDetailScreenProps> = ({
           </View>
         )}
       />
+    </View>
+  );
+
+  const renderOffer = ({item: offer}: {item: Offer}) => (
+    <View
+      style={{
+        flexDirection: 'column',
+        backgroundColor: '#f00049',
+        height: 150,
+        paddingLeft: 10,
+        borderRadius: 20,
+      }}>
+      <Text style={styles.offerTitle}>{offer.title}</Text>
+      <Text style={styles.offerDescription}>{offer.description}</Text>
+      <View style={styles.offerContainer}>
+        <></>
+        <Image
+          source={require('../assets/y_club.jpg')}
+          style={styles.offerImage}
+        />
+      </View>
     </View>
   );
 
@@ -175,25 +221,48 @@ const RestaurantDetailScreen: React.FC<RestaurantDetailScreenProps> = ({
                 justifyContent: 'flex-start',
               }}>
               <Text style={{marginBottom: 10}}>
-                Minimum sepet tutarı {restaurant?.minimum_sepet_tutari} TL
+                Minimum sepet tutarı {restaurantMinSepetTutari} TL
               </Text>
             </View>
             <RestourantDetailHeaderComponent
               path={null}
               icon={'time-outline'}
-              text={`${restaurant?.degerlendirme}`}
+              text={`${restaurantRating}`}
               textFunction={'Yorumları Gör'}
             />
             <RestourantDetailHeaderComponent
               path={null}
               icon={'star-outline'}
-              text={`Teslimat : ${restaurant?.teslimat}`}
+              text={`Teslimat: 20-30 dk`}
               textFunction={'Değiştir'}
             />
+            <View style={styles.offersList}>
+              <View
+                style={{
+                  flexDirection: 'row',
+                  marginBottom: 10,
+                }}>
+                <Ion_Icon
+                  name="pricetags-outline"
+                  size={24}
+                  color={'#f00049'}
+                />
+                <Text style={{color: 'black', fontWeight: '900', fontSize: 18}}>
+                  {' '}
+                  Mevcut teklifler
+                </Text>
+              </View>
+              <FlatList
+                data={offer}
+                renderItem={renderOffer}
+                keyExtractor={item => item.title} // veya başka benzersiz bir alan
+                showsHorizontalScrollIndicator={false}
+              />
+            </View>
             <View style={styles.tabBar}>
               {menu.map((category, index) => (
                 <TouchableOpacity
-                  key={index}
+                  key={category.name}
                   onPress={() => handleCategoryPress(index)}>
                   <Text
                     style={[
@@ -210,7 +279,7 @@ const RestaurantDetailScreen: React.FC<RestaurantDetailScreenProps> = ({
         }
         data={menu}
         renderItem={renderCategory}
-        keyExtractor={(item, index) => index.toString()}
+        keyExtractor={item => item.name}
         contentContainerStyle={styles.container}
         onViewableItemsChanged={onViewableItemsChanged}
         viewabilityConfig={viewabilityConfig}
@@ -262,7 +331,9 @@ const styles = StyleSheet.create({
     color: 'black',
   },
   tabBar: {
+    marginTop: 80,
     flexDirection: 'row',
+    justifyContent: 'flex-start',
     marginVertical: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#ccc',
@@ -298,7 +369,7 @@ const styles = StyleSheet.create({
   },
   dishColumnContainer: {
     flexDirection: 'column',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     paddingVertical: 4,
     marginRight: 10,
   },
@@ -311,11 +382,45 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
   },
+  dishDescription: {
+    fontSize: 16,
+    color: '#666',
+    width: '60%',
+  },
   dishImage: {
     width: 100,
     height: 100,
     borderRadius: 20,
     elevation: 15,
+  },
+  offersList: {
+    marginVertical: 16,
+    height: 100,
+  },
+  offerContainer: {
+    paddingHorizontal: 0,
+    marginHorizontal: 0,
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    height: 100,
+    flexDirection: 'row',
+    width: '100%',
+  },
+  offerImage: {
+    width: 70,
+    height: 70,
+    borderRadius: 10,
+  },
+  offerTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    width: '80%',
+    marginVertical: 8,
+    color: 'white',
+  },
+  offerDescription: {
+    fontSize: 14,
+    color: 'white',
   },
 });
 

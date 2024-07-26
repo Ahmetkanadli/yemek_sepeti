@@ -1,4 +1,5 @@
 import axios from 'axios';
+import {Category} from './models/types.tsx';
 
 const BASE_URL = 'http://10.0.0.236:8000/api';
 
@@ -8,6 +9,9 @@ export interface Restaurant {
   location: string;
   image: string;
   degerlendirme: number;
+  teslimat_ucreti: number;
+  minimum_sepet_tutari: number;
+  teslimat_suresi: number;
 }
 
 export interface Menu {
@@ -29,6 +33,14 @@ export interface MenuItem {
   title: string;
 }
 
+// core/models/types.ts
+export interface Offer {
+  title: string;
+  description: string;
+  image_url: string;
+  is_exist: boolean; // boolean olarak değiştirildi
+}
+
 export const getRestaurants = async (): Promise<Restaurant[]> => {
   try {
     const response = await axios.get(`${BASE_URL}/restaurants/`);
@@ -40,6 +52,9 @@ export const getRestaurants = async (): Promise<Restaurant[]> => {
       location: data[key].address,
       image: data[key].image_url,
       degerlendirme: data[key].rating,
+      teslimat_ucreti: data[key].delivery_price,
+      teslimat_suresi: data[key].delivery_time,
+      minimum_sepet_tutari: data[key].min_basket_price,
     }));
   } catch (error) {
     console.error('Error fetching restaurants:', error);
@@ -56,22 +71,12 @@ export const addRestaurant = async (restaurant: Restaurant) => {
   }
 };
 
-export const getMenu = async ({
-  id,
-}): Promise<{restaurant: Restaurant; categories: Category[]}> => {
+export const getMenu = async ({id}): Promise<{categories: Menu[]}> => {
   try {
     const response = await axios.get(`${BASE_URL}/menus/restaurant/${id}/`);
     const data = response.data;
 
     return {
-      restaurant: {
-        id: data[0].restaurant,
-        name: data[0].name,
-        image: data[0].image_url,
-        minimum_sepet_tutari: '50', // Replace this with the actual data if available
-        degerlendirme: '4.5', // Replace this with the actual data if available
-        teslimat: '30-40 minutes', // Replace this with the actual data if available
-      },
       categories: data.map((category: any) => ({
         id: category.id,
         name: category.name,
@@ -85,6 +90,28 @@ export const getMenu = async ({
     };
   } catch (error) {
     console.error('Error fetching menu:', error);
+    throw error;
+  }
+};
+
+export const getOffers = async ({restaurantId}): Promise<Offer[]> => {
+  try {
+    const response = await axios.get(
+      `${BASE_URL}/restaurants/restaurant/offer/${restaurantId}/`,
+    );
+    const data = response.data;
+
+    console.log(data);
+
+    return Object.keys(data).map(key => ({
+      title: data[key].title,
+      description: data[key].description,
+      is_exist: data[key].is_exist,
+      image_url: data[key].image_url,
+      restourant_id: data[key].restourant_id,
+    }));
+  } catch (error) {
+    console.error('Error fetching offers:', error);
     throw error;
   }
 };

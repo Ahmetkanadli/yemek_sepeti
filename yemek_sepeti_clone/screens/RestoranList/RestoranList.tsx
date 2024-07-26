@@ -125,6 +125,10 @@ const RestaurantCard: React.FC<{
           restaurantId: item.id,
           restaurantName: item.name,
           restaurantImage: item.image,
+          restaurantRating: item.degerlendirme,
+          restaurantLocation: item.location,
+          restourantDelivery: item.teslimat_suresi,
+          restaurantMinSepetTutari: item.minimum_sepet_tutari
         })
       }
       style={styles.card}>
